@@ -1,0 +1,50 @@
+version: "3.9"
+services:
+  base:
+    image: mola:base
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ROS_DISTRO: humble
+      target: base
+    stdin_open: true
+    tty: true
+    network_mode: host
+    ipc: host
+    privileged: True
+    environment:
+      # Allows graphical programs in the container.
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    volumes:
+      # Allows graphical programs in the container.
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${XAUTHORITY:-$HOME/.Xauthority}:/root/.Xauthority
+  
+  mola:
+    extends: base
+    image: mola:mola
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: mola
+      args:
+        - UID=${UID:-1000}
+        - GID=${UID:-1000}
+        - USERNAME=${USERNAME:-devuser}
+    volumes:
+      # Mount the source code
+      - ./mola:/mola_ws/src/mola:rw
+      - ./mola_common:/mola_ws/src/mola_common:rw
+      - ./mola_lidar_odometry:/mola_ws/src/mola_lidar_odometry:rw
+      - ./mola_test_datasets:/mola_ws/src/mola_test_datasets:rw
+      - ./mp2p_icp:/mola_ws/src/mp2p_icp:rw
+      # Mount colcon build artifacts for faster rebuilds
+      - ./.colcon/build:/mola_ws/build/:rw
+      - ./.colcon/install:/mola_ws/install/:rw
+      - ./.colcon/log:/mola_ws/log/:rw
+    user: ${USERNAME:-devuser}
+    command: sleep infinity
+
