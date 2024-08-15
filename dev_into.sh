@@ -1,0 +1,1 @@
+docker compose exec -it mola bash
