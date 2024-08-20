@@ -1,1 +1,1 @@
-docker compose exec -it mola bash
+docker compose exec -it modular_slam bash

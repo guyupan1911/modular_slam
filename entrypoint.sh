@@ -6,10 +6,10 @@ source /opt/ros/${ROS_DISTRO}/setup.bash
 echo "Sourced ROS 2 ${ROS_DISTRO}"
 
 # Source the base workspace, if built
-if [ -f /mola_ws/install/setup.bash ]
+if [ -f /modular_slam_ws/install/setup.bash ]
 then
-  source /mola_ws/install/setup.bash
-  echo "Sourced mola workspace"
+  source /modular_slam_ws/install/setup.bash
+  echo "Sourced modular_slam workspace"
 fi
 
 # Execute the command passed into this entrypoint
