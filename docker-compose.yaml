@@ -38,7 +38,7 @@ services:
       - KITTI_BASE_DIR=/Datasets/KITTI/dataset
     volumes:
       # Mount the source code
-      - ./modules:/modular_slam_ws/src/modular_slam:rw
+      - ./modular_slam:/modular_slam_ws/src/modular_slam:rw
 
       # Mount colcon build artifacts for faster rebuilds
       - ./.colcon/build:/modular_slam_ws/build/:rw

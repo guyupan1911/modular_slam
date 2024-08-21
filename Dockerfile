@@ -9,12 +9,12 @@ SHELL ["/bin/bash", "-c"]
 
 RUN mkdir -p /modular_slam_ws/src
 WORKDIR /modular_slam_ws
-COPY ./modules ./src/modular_slam/
+COPY ./modular_slam ./src/modular_slam/
 
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
   && apt-get update -y \
   && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y \
-  && apt-get install software-properties-common -y \
+  && apt-get install software-properties-common python3-colcon-clean -y \
   && add-apt-repository ppa:joseluisblancoc/mrpt-stable \
   && apt install libmrpt-dev mrpt-apps python3-pymrpt -y \
   && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
