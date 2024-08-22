@@ -31,8 +31,8 @@ services:
       dockerfile: Dockerfile
       target: modular_slam
       args:
-        - UID=${UID:-1000}
-        - GID=${UID:-1000}
+        - UID=${UID:-916900799}
+        - GID=${GID:-916900799}
         - USERNAME=${USERNAME:-devuser}
     environment:
       - KITTI_BASE_DIR=/Datasets/KITTI/dataset

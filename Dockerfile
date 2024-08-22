@@ -16,8 +16,7 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
   && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y \
   && apt-get install software-properties-common python3-colcon-clean -y \
   && add-apt-repository ppa:joseluisblancoc/mrpt-stable \
-  && apt install libmrpt-dev mrpt-apps python3-pymrpt -y \
-  && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+  && apt install libmrpt-dev mrpt-apps python3-pymrpt -y
 
 COPY ./entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
@@ -40,7 +39,7 @@ RUN groupadd --gid $GID $USERNAME \
   && chown -R ${UID}:${GID} /home/${USERNAME}
 
 # Set the ownership of the modular_slam workspace to the new user
-RUN chown -R ${UID}:${GID} /modular_slam_ws/
+# RUN chown -R ${UID}:${GID} /modular_slam_ws/
 
 # Set the user and source entrypoint in the user's .bashrc file
 USER ${USERNAME}
