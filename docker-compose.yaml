@@ -31,11 +31,12 @@ services:
       dockerfile: Dockerfile
       target: modular_slam
       args:
-        - UID=${UID:-916900799}
-        - GID=${GID:-916900799}
+        - UID=${uid}
+        - GID=${uid}
         - USERNAME=${USERNAME:-devuser}
     environment:
-      - KITTI_BASE_DIR=/Datasets/KITTI/dataset
+      - Datasets=${Datasets}
+      - uid=${uid}
     volumes:
       # Mount the source code
       - ./modular_slam:/modular_slam_ws/src/modular_slam:rw
@@ -45,7 +46,7 @@ services:
       - ./.colcon/install:/modular_slam_ws/install/:rw
       - ./.colcon/log:/modular_slam_ws/log/:rw
       # Datasets
-      - /storage:/Datasets
+      - ${Datasets}:/Datasets
     user: ${USERNAME:-devuser}
     command: sleep infinity
 
