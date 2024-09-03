@@ -45,7 +45,7 @@ services:
       - ./.colcon/install:/modular_slam_ws/install/:rw
       - ./.colcon/log:/modular_slam_ws/log/:rw
       # Datasets
-      - ~/Datasets:/Datasets
+      - /storage:/Datasets
     user: ${USERNAME:-devuser}
     command: sleep infinity
 

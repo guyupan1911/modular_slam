@@ -1,17 +1,15 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(modular_slam_interface LANGUAGES CXX)
+project(modular_slam_yaml LANGUAGES CXX)
 
-find_package(mrpt-obs)
+# find dependencies:
+find_package(MRPT 2.1.0 REQUIRED COMPONENTS containers system)
 
 set(LIB_PUBLIC_HDRS
-  raw_data_consumer.h
-  raw_datasource_base.h
-  offline_dataset_source.h
+  yaml_helper.h
 )
 
 set(LIB_SRCS
-  raw_datasource_base.cc
 )
 
 include_directories(${CMAKE_SOURCE_DIR})
@@ -19,6 +17,6 @@ include_directories(${CMAKE_SOURCE_DIR})
 add_library(${PROJECT_NAME} ${LIB_PUBLIC_HDRS} ${LIB_SRCS})
 
 target_link_libraries(${PROJECT_NAME}
-  mrpt::obs
-  mrpt::poses
+  mrpt::containers
+  mrpt::system
 )
