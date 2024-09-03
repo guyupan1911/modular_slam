@@ -37,13 +37,20 @@ class KittiOdometryDataset : public RawDataSourceBase,
     return ground_truth_trajectory_;
   }
 
+  void Initialize_rds(const mrpt::containers::yaml& yaml) override;
+
   size_t DatasetSize() const override;
+
+  std::shared_ptr<mrpt::obs::CObservationImage> GetImage(
+    const unsigned int cam_idx, timestep_t step) const;
+
+  std::shared_ptr<mrpt::obs::CObservation> GetPointCloud(timestep_t step) const;
 
   mrpt::obs::CSensoryFrame::Ptr GetObservation(size_t timestamp) const override;
  
-  void Initialize_rds(const mrpt::containers::yaml& yaml) override;
 
  private:
+  bool initialized_ = false;
   /* yaml parameters*/
   std::string base_dir_;
   std::string sequence_;

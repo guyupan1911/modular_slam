@@ -57,12 +57,6 @@ KittiOdometryDataset::KittiOdometryDataset() {
   this->mrpt::system::COutputLogger::setLoggerName("KittiDoometryDataset");
 }
 
-size_t KittiOdometryDataset::DatasetSize() const { return {}; }
-
-mrpt::obs::CSensoryFrame::Ptr KittiOdometryDataset::GetObservation(size_t timestamp) const {
-  return {};
-}
-
 void KittiOdometryDataset::Initialize_rds(const mrpt::containers::yaml& yaml) {
   MRPT_LOG_DEBUG_STREAM("Initializing with these params:\n" << yaml);
 
@@ -180,8 +174,98 @@ void KittiOdometryDataset::Initialize_rds(const mrpt::containers::yaml& yaml) {
   auto Trh = mrpt::math::CMatrixDouble44::Identity();
   Trh.block<3, 4>(0, 0) = Tr;
   MRPT_LOG_DEBUG_STREAM("Original Trh= (velo wrt cam_0) \n" << Trh);
+  // Inverse:
+  Trh = Trh.inverse();
+  MRPT_LOG_DEBUG_STREAM("Inverted Trh= (cam_0 wrt velo) \n" << Trh);
 
+  // Camera 0:
+  cam_poses_[0] = mrpt::poses::CPose3D(Trh).asTPose();
+
+  // Cameras 1-3:
+  for (unsigned int i = 1; i < 4; i++) {
+    cam_poses_[0].composePose(cam_poses_[i], cam_poses_[i]);
+  }
+
+  // Debug: dump poses.
+  for (unsigned int i = 0; i < 4; i++) {
+    mrpt::poses::CPose3D        p(cam_poses_[i]);
+    mrpt::math::CMatrixDouble44 T;
+    p.getHomogeneousMatrix(T);
+    MRPT_LOG_DEBUG_STREAM(
+        "image_" << i << " pose on vehicle: " << cam_poses_[i]
+                  << "\nTransf. matrix:\n"
+                  << T);
+  }
   
+  // Load ground truth poses, if available:
+  const auto gtFile = base_dir_ + "/poses/" + sequence_ + ".txt";
+  if (mrpt::system::fileExists(gtFile)) {
+    ground_truth_poses_.loadFromTextFile(gtFile);
+
+    ASSERT_EQUAL_(ground_truth_poses_.cols(), 12U);
+    ASSERT_EQUAL_(static_cast<size_t>(ground_truth_poses_.rows()), lst_timestamps_.size());
+
+    // Convert into the format expected by MOLA generic interface:
+    mrpt::math::CMatrixDouble44 m = mrpt::math::CMatrixDouble44::Identity();
+    const auto cam0PoseInv        = -mrpt::poses::CPose3D(cam_poses_.at(0));
+
+    using namespace mrpt::literals;  // _deg
+    const auto axisChange = mrpt::poses::CPose3D::FromYawPitchRoll(
+        -90.0_deg, 0.0_deg, -90.0_deg);
+
+    for (size_t i = 0; i < lst_timestamps_.size(); i++) {
+      for (int row = 0, ij_idx = 0; row < 3; row++) {
+        for (int col = 0; col < 4; col++, ij_idx++) {
+          m(row, col) = ground_truth_poses_(i, ij_idx);
+        }
+      }
+
+      // ground truth is for cam0:
+      const auto gtCam0Pose = mrpt::poses::CPose3D::FromHomogeneousMatrix(m);
+
+      // Convert it to the vehicle frame, for consistency with all MOLA
+      // datasets:
+      const auto gtPose = axisChange + gtCam0Pose + cam0PoseInv;
+
+      ground_truth_trajectory_.insert(mrpt::Clock::fromDouble(lst_timestamps_.at(i)), gtPose);
+    }
+
+    MRPT_LOG_INFO("Ground truth poses: Found");
+  } else {
+    MRPT_LOG_WARN_STREAM("Ground truth poses: not found. Expected file: " << gtFile);
+  }
+
+  initialized_ = true;
 }
- 
+
+size_t KittiOdometryDataset::DatasetSize() const {
+  ASSERT_(initialized_);
+  return lst_timestamps_.size();
+}
+
+std::shared_ptr<mrpt::obs::CObservationImage> KittiOdometryDataset::GetImage(
+    const unsigned int cam_idx, timestep_t step) const {
+    
+    ASSERT_(initialized_);
+    ASSERT_LT_(step, lst_timestamps_.size());
+
+    
+}
+
+mrpt::obs::CSensoryFrame::Ptr KittiOdometryDataset::GetObservation(size_t timestamp) const {
+  
+  auto sensor_frame = mrpt::obs::CSensoryFrame::Create();
+
+  for (size_t i = 0; i < publish_image_.size(); ++i) {
+    if (!publish_image_[i]) {
+      continue;
+    }
+    sensor_frame->insert(GetImage(i, timestamp));
+  }
+
+  if (publish_lidar_) {
+    sensor_frame->insert(GetPointCloud(timestamp));
+  }
+
+  return sensor_frame;
 }
