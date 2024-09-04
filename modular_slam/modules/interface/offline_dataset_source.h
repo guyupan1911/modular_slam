@@ -22,7 +22,7 @@ class OfflineDatasetSource {
 
   virtual size_t DatasetSize() const = 0;
 
-  virtual mrpt::obs::CSensoryFrame::Ptr GetObservation(size_t timestamp) const = 0;
+  virtual mrpt::obs::CSensoryFrame::Ptr GetObservations(size_t timestamp) const = 0;
  
   virtual bool HasGroundTruthTrajectory() const { return false; }
 

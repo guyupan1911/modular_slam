@@ -15,7 +15,7 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
   && apt-get update -y \
   && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y \
   && apt-get install software-properties-common python3-colcon-clean -y \
-  && add-apt-repository ppa:joseluisblancoc/mrpt-stable \
+  && add-apt-repository ppa:joseluisblancoc/mrpt \
   && apt install libmrpt-dev mrpt-apps python3-pymrpt -y
 
 COPY ./entrypoint.sh /

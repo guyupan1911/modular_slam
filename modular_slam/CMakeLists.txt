@@ -4,4 +4,4 @@ project(modular_slam LANGUAGES CXX)
 
 add_subdirectory(modules/interface)
 add_subdirectory(modules/input_kitti_dataset)
-# add_subdirectory(modules/yaml)
+add_subdirectory(modules/ros2_bridge)

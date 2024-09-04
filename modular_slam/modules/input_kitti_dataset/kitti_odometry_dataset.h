@@ -42,12 +42,22 @@ class KittiOdometryDataset : public RawDataSourceBase,
   size_t DatasetSize() const override;
 
   std::shared_ptr<mrpt::obs::CObservationImage> GetImage(
-    const unsigned int cam_idx, timestep_t step) const;
+    const unsigned int cam_idx, size_t step) const;
 
-  std::shared_ptr<mrpt::obs::CObservation> GetPointCloud(timestep_t step) const;
+  std::shared_ptr<mrpt::obs::CObservation> GetPointCloud(size_t step) const;
 
-  mrpt::obs::CSensoryFrame::Ptr GetObservation(size_t timestamp) const override;
- 
+  mrpt::obs::CSensoryFrame::Ptr GetObservations(size_t timestamp) const override;
+
+  /** See:
+   *  "IMLS-SLAM: scan-to-model matching based on 3D data", JE Deschaud, 2018.
+   */
+  double VERTICAL_ANGLE_OFFSET = mrpt::DEG2RAD(0.205);
+
+ private:
+  void LoadImage(const unsigned int cam_idx, const size_t step) const;
+  void LoadLidar(size_t step) const;
+
+  void AutoUnloadOldEntries() const;
 
  private:
   bool initialized_ = false;
@@ -55,6 +65,8 @@ class KittiOdometryDataset : public RawDataSourceBase,
   std::string base_dir_;
   std::string sequence_;
   bool clouds_as_organized_points_ = false;
+  unsigned int range_matrix_column_count_ = 2000;
+  unsigned int range_matrix_row_count_ = 64;
 
   bool publish_lidar_{true};
   bool publish_ground_truth_{true};
@@ -69,7 +81,10 @@ class KittiOdometryDataset : public RawDataSourceBase,
   std::vector<std::string> lst_velodyne_;
   mrpt::math::CMatrixDouble ground_truth_poses_;
   mrpt::poses::CPose3DInterpolator ground_truth_trajectory_;
-
+  mutable std::map<size_t, mrpt::obs::CObservation::Ptr>
+      read_ahead_lidar_obs_;
+  mutable std::map<size_t, std::array<mrpt::obs::CObservation::Ptr, 4>>
+      read_ahead_image_obs_;
 
 };
 
