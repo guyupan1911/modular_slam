@@ -11,8 +11,12 @@
 
 #include "modules/ros2_bridge/ros2_bridge.h"
 
+#include <mrpt/maps/CPointsMapXYZI.h>
+#include <mrpt/maps/CPointsMapXYZIRT.h>
+#include <mrpt/maps/CSimplePointsMap.h>
 #include <mrpt/ros1bridge/time.h>
 #include <mrpt/ros1bridge/image.h>
+#include <mrpt/ros1bridge/point_cloud2.h>
 
 
 namespace modular_slam {
@@ -65,6 +69,8 @@ void ROS2Bridge::OnNewObservation(const mrpt::obs::CObservation::Ptr& o) {
 
   if (auto oImg = std::dynamic_pointer_cast<mrpt::obs::CObservationImage>(o); oImg) {
     return InternalOn(*oImg);
+  } else if ( auto oPc = std::dynamic_pointer_cast<mrpt::obs::CObservationPointCloud>(o); oPc) {
+    return InternalOn(*oPc);
   }
 }
 
@@ -117,5 +123,90 @@ void ROS2Bridge::InternalOn(const mrpt::obs::CObservationImage& obs) {
   }
 }
 
+void ROS2Bridge::InternalOn(const mrpt::obs::CObservationPointCloud& obs) {
+  auto lock = mrpt::lockHelper(ros_publish_mtx_);
+
+  const bool is_first_pub = ros_pubs_.sensor_pubs.find(obs.sensorLabel) ==
+                            ros_pubs_.sensor_pubs.end();
+  
+  auto& pub = ros_pubs_.sensor_pubs[obs.sensorLabel];
+  
+  if (is_first_pub) {
+    pub = RosNode()->create_publisher<sensor_msgs::msg::PointCloud2>(
+        obs.sensorLabel, rclcpp::SystemDefaultsQoS());
+  }
+  lock.unlock();
+
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubPoints =
+      std::dynamic_pointer_cast<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>>(pub);
+  ASSERT_(pubPoints);
+
+  const std::string sensor_frame_id = obs.sensorLabel;
+
+  // send tf
+  {
+    mrpt::poses::CPose3D sensorPose = obs.sensorPose;
+
+    tf2::Transform transform = mrpt::ros2bridge::toROS_tfTransform(sensorPose);
+
+    geometry_msgs::msg::TransformStamped tfStmp;
+    tfStmp.transform       = tf2::toMsg(transform);
+    tfStmp.child_frame_id  = sSensorFrameId;
+    tfStmp.header.frame_id = params_.base_link_frame;
+    tfStmp.header.stamp    = myNow(obs.timestamp);
+    tf_bc_->sendTransform(tfStmp);
+  }
+
+  // send observation
+  if (obs.pointcloud) {
+    // Convert observation MRPT -> ROS1 -> ROS2
+    sensor_msgs::PointCloud2 msg_pts;
+    std_msgs::Header   msg_header;
+    msg_header.stamp    = MyNow(obs.timestamp);
+    msg_header.frame_id = sensor_frame_id;
+
+    obs.load();
+
+    if (auto* xyzirt = dynamic_cast<const mrpt::maps::CPointsMapXYZIRT*>(
+        obs.pointcloud.get()); xyzirt) {
+        mrpt::ros1bridge::toROS(*xyzirt, msg_header, msg_pts);
+    } else if (auto* xyzi = dynamic_cast<const mrpt::maps::CPointsMapXYZI*>(
+        obs.pointcloud.get()); xyzi) {
+        mrpt::ros1bridge::toROS(*xyzi, msg_header, msg_pts);
+    } else if (auto* sPts = dynamic_cast<const mrpt::maps::CSimplePointsMap*>(
+        obs.pointcloud.get()); sPts) {
+        mrpt::ros1bridge::toROS(*sPts, msg_header, msg_pts);
+    } else {
+      THROW_EXCEPTION_FMT(
+        "Do not know how to handle this variant of CPointsMap: "
+        "class='%s'",
+        obs.pointcloud->GetRuntimeClass()->className);
+    }
+
+    sensor_msgs::msg::PointCloud2 msg_pts_ros2;
+    msg_pts_ros2.header.stamp.sec =  msg_header.stamp.sec;
+    msg_pts_ros2.header.stamp.nanosec =  msg_header.stamp.nsec;
+    // msg_pts_ros2.header.frame_id =  msg_header.frame_id;
+    msg_pts_ros2.header.frame_id = "map";
+
+    msg_pts_ros2.height = msg_pts.height;
+    msg_pts_ros2.width = msg_pts.width;
+    for (size_t i = 0; i < msg_pts_ros2.fields.size(); ++i) {
+      msg_pts_ros2.fields[i].name = msg_pts.fields[i].name;
+      msg_pts_ros2.fields[i].offset = msg_pts.fields[i].offset;
+      msg_pts_ros2.fields[i].datatype = msg_pts.fields[i].datatype;
+      msg_pts_ros2.fields[i].count = msg_pts.fields[i].count;
+    }
+    msg_pts_ros2.is_bigendian = msg_pts.is_bigendian;
+    msg_pts_ros2.point_step = msg_pts.point_step;
+    msg_pts_ros2.row_step = msg_pts.row_step;
+    msg_pts_ros2.data = msg_pts.data;
+    msg_pts_ros2.is_dense = msg_pts.is_dense;
+
+    std::cout << "point size: " << msg_pts_ros2.height * msg_pts_ros2.width << "\n";
+
+    pubPoints->publish(msg_pts_ros2);
+  }  
+}
 
 }

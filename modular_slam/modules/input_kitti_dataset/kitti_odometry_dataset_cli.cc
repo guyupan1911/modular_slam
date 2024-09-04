@@ -62,7 +62,9 @@ int main() {
     if (obs = sf->getObservationByClass<CObservationImage>(), obs) {
       ros_node->OnNewObservation(obs);
     }
-    // if (!obs) obs = sf->getObservationByClass<CObservationPointCloud>();
+    if (obs = sf->getObservationByClass<CObservationPointCloud>(); obs) {
+      ros_node->OnNewObservation(obs);
+    }
     // if (!obs) obs = sf->getObservationByClass<CObservation3DRangeScan>();
     // if (!obs) obs = sf->getObservationByClass<CObservation2DRangeScan>();
     // if (!obs) obs = sf->getObservationByClass<CObservationVelodyneScan>();

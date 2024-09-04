@@ -15,9 +15,11 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 #include <ros/ros.h>
 
 #include <mrpt/obs/CObservationImage.h>
+#include <mrpt/obs/CObservationPointCloud.h>
 
 #include "modules/interface/raw_data_consumer.h"
 
@@ -43,6 +45,7 @@ class ROS2Bridge : public RawDataConsumer {
   }
 
   void InternalOn(const mrpt::obs::CObservationImage& obs);
+  void InternalOn(const mrpt::obs::CObservationPointCloud& obs);
 
  private:
   // parameters
