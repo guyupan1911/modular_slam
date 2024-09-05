@@ -52,12 +52,6 @@ int main() {
     const auto sf = dataset->GetObservations(i);
     ASSERT_(sf);
 
-    std::cout << "entry " << i << " : \n";
-    for (auto iter = sf->begin(); iter != sf->end(); ++iter) {
-      std::cout << (*iter)->sensorLabel << " ";
-    }
-    std::cout << "\n";
-
     mrpt::obs::CObservation::Ptr obs;
     if (obs = sf->getObservationByClass<CObservationImage>(), obs) {
       ros_node->OnNewObservation(obs);

@@ -140,7 +140,7 @@ void ROS2Bridge::InternalOn(const mrpt::obs::CObservationPointCloud& obs) {
   
   if (is_first_pub) {
     pub = RosNode()->create_publisher<sensor_msgs::msg::PointCloud2>(
-        label_points, rclcpp::SensorDataQoS());
+        label_points, rclcpp::SystemDefaultsQoS());
   }
   lock.unlock();
 
