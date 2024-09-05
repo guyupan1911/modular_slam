@@ -16,7 +16,12 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <ros/ros.h>
+#include <ros/time.h>
+
+// #include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/static_transform_broadcaster.h>
+// #include <tf2_ros/transform_listener.h>
 
 #include <mrpt/obs/CObservationImage.h>
 #include <mrpt/obs/CObservationPointCloud.h>
@@ -49,13 +54,21 @@ class ROS2Bridge : public RawDataConsumer {
 
  private:
   // parameters
-  bool publish_in_sim_time_ = true;
+  bool publish_in_sim_time_ = false;
 
   // ros
   std::shared_ptr<rclcpp::Node> ros_node_;
   std::mutex ros_node_mtx_;
   std::thread ros_node_thread_;
   std::mutex ros_publish_mtx_;
+
+  // tf
+  // std::shared_ptr<tf2_ros::Buffer>            tf_buffer_;
+  // std::shared_ptr<tf2::BufferCore>            tf_buffer_;
+  // std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
+  std::shared_ptr<tf2_ros::TransformBroadcaster>       tf_bc_;
+  // std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_bc_;
 
   struct RosPubs {
     std::map<std::string, rclcpp::PublisherBase::SharedPtr> sensor_pubs;

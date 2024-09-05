@@ -6,4 +6,6 @@ params:
   publish_lidar: true
   publish_image_0: false
   publish_image_1: false
+  publish_image_2: false
+  publish_image_3: false
   publish_ground_truth: true
